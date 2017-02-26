@@ -33,7 +33,7 @@ startLoadBalancer() async {
     ..useCertificateChain('keys/server.crt')
     ..usePrivateKey('keys/server.key');
   var loadBalancer =
-      new LoadBalancer.fromSecurityContext(context, algorithm: LEAST_LATENCY);
+      new LoadBalancer.fromSecurityContext(context);
 
   await loadBalancer
       .configure(catchErrorsAndDiagnose('logs/load_balancer.txt'));
@@ -47,6 +47,10 @@ startLoadBalancer() async {
 
   // `503 Service Unavailable` as fallback
   loadBalancer.after.add(serviceUnavailable());
+
+  // Usually we'll cache responses, or add GZIPPING
+  await loadBalancer.configure(cacheResponses());
+  loadBalancer.responseFinalizers.add(gzip());
 
   var server = await loadBalancer.startServer(InternetAddress.ANY_IP_V4, 443);
   print(
