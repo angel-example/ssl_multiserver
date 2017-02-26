@@ -29,9 +29,11 @@ forceHttps() async {
 }
 
 startLoadBalancer() async {
-  var loadBalancer = new LoadBalancer.secure(
-      '../keys/server.key', '../keys/server.crt',
-      algorithm: LEAST_LATENCY);
+  var context = new SecurityContext()
+    ..useCertificateChain('keys/server.crt')
+    ..usePrivateKey('keys/server.key');
+  var loadBalancer =
+      new LoadBalancer.fromSecurityContext(context, algorithm: LEAST_LATENCY);
 
   await loadBalancer
       .configure(catchErrorsAndDiagnose('logs/load_balancer.txt'));
@@ -42,6 +44,9 @@ startLoadBalancer() async {
     // Start a new node whenever one crashes
     loadBalancer.spawnIsolates(cluster);
   });
+
+  // `503 Service Unavailable` as fallback
+  loadBalancer.after.add(serviceUnavailable());
 
   var server = await loadBalancer.startServer(InternetAddress.ANY_IP_V4, 443);
   print(
