@@ -1,0 +1,5 @@
+name: ssl_multiserver
+publish_to: none
+dependencies:
+  angel_common: ^1.0.0-beta
+  angel_multiserver: ^1.0.0
