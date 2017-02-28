@@ -8,21 +8,13 @@ final Uri cluster = Platform.script.resolve('cluster.dart');
 final RegExp _leadingSlashes = new RegExp(r'^\/+');
 
 main() async {
-  await forceHttps();
+  await enforceHttps();
   await startLoadBalancer();
 }
 
-forceHttps() async {
-  var enforcer = new Angel();
-
-  enforcer.before.add((RequestContext req, ResponseContext res) async {
-    var host = req.hostname;
-    var path = req.uri.path.replaceAll(_leadingSlashes, '');
-    res.redirect('https://$host/$path');
-  });
-
+enforceHttps() async {
+  var enforcer = new Angel()..before.add(forceHttps());
   await enforcer.configure(catchErrorsAndDiagnose('logs/enforcer.txt'));
-
   var server = await enforcer.startServer(InternetAddress.ANY_IP_V4, 80);
   print(
       'HTTPS enforcer listening at http://${server.address.address}:${server.port}');
